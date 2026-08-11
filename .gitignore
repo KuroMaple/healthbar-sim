@@ -1,0 +1,31 @@
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+
+# Claude Code
+.claude/
+
+# CMake build output
+cmake-build-*/
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Fetched dependencies (SFML is pulled in via FetchContent)
+_deps/
+
+# Binaries
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+healthBarSim
+
+# OS cruft
+.DS_Store
+Thumbs.db
