@@ -8,8 +8,10 @@ class HealthModel {
 public:
     HealthModel(int maxHp, int step);
 
-    void increase();
-    void decrease();
+    // Both return whether the value actually moved, so callers can tell a real
+    // change from a click that was clamped away at the limit.
+    bool increase();
+    bool decrease();
 
     int current() const;
     int max() const;

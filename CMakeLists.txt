@@ -19,6 +19,7 @@ add_executable(healthBarSim
         src/viewmodel/HealthBarViewModel.cpp
         src/view/HealthBarView.cpp
         src/view/RoundedRectangle.cpp
+        src/view/ShakeEffect.cpp
 )
 target_include_directories(healthBarSim PRIVATE include)
 

@@ -11,12 +11,12 @@ constexpr float kLowThreshold = 0.20f;
 HealthBarViewModel::HealthBarViewModel(model::HealthModel& model)
     : m_model(model) {}
 
-void HealthBarViewModel::increaseHp() {
-    m_model.increase();
+bool HealthBarViewModel::increaseHp() {
+    return m_model.increase();
 }
 
-void HealthBarViewModel::decreaseHp() {
-    m_model.decrease();
+bool HealthBarViewModel::decreaseHp() {
+    return m_model.decrease();
 }
 
 float HealthBarViewModel::healthFraction() const {

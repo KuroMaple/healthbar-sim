@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 
 #include <healthbar/view/RoundedRectangle.hpp>
+#include <healthbar/view/ShakeEffect.hpp>
 #include <healthbar/viewmodel/HealthBarViewModel.hpp>
 
 namespace healthbar::view {
@@ -14,6 +15,11 @@ public:
     explicit HealthBarView(viewmodel::HealthBarViewModel& viewModel);
 
     void handleEvents(sf::RenderWindow& window);
+
+    // Advances time-based presentation state. Separate from render() so the
+    // animation can be stepped deterministically.
+    void update(float deltaSeconds);
+
     void render(sf::RenderWindow& window);
 
 private:
@@ -35,6 +41,12 @@ private:
     sf::RectangleShape m_minusBar;
     sf::RectangleShape m_plusBarHorizontal;
     sf::RectangleShape m_plusBarVertical;
+
+    ShakeEffect m_shake;
+
+    // Which button is currently held down, or null. Points at one of the button
+    // members above, so it never outlives what it refers to.
+    const sf::CircleShape* m_pressedButton = nullptr;
 };
 
 } // namespace healthbar::view

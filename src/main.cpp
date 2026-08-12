@@ -14,8 +14,11 @@ int main() {
     healthbar::viewmodel::HealthBarViewModel viewModel(model);
     healthbar::view::HealthBarView view(viewModel);
 
+    sf::Clock clock;
     while (window.isOpen()) {
+        const float deltaSeconds = clock.restart().asSeconds();
         view.handleEvents(window);
+        view.update(deltaSeconds);
         view.render(window);
     }
 

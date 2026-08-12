@@ -25,6 +25,7 @@ constexpr float kHpTextCenterX = 300.f;
 constexpr float kHpTextCenterY = 170.f;
 
 const sf::Color kButtonColor(50, 110, 220);
+const sf::Color kButtonPressedColor(30, 70, 150);
 const sf::Color kGlyphColor = sf::Color::White;
 
 sf::Font loadFont() {
@@ -122,16 +123,34 @@ void HealthBarView::handleEvents(sf::RenderWindow& window) {
             if (pressed->button == sf::Mouse::Button::Left) {
                 onLeftClick(window.mapPixelToCoords(pressed->position));
             }
+        } else if (const auto* released = event->getIf<sf::Event::MouseButtonReleased>()) {
+            // Clear regardless of where the cursor ended up, so dragging off a
+            // button can't leave it stuck in the pressed colour.
+            if (released->button == sf::Mouse::Button::Left) {
+                m_pressedButton = nullptr;
+            }
         }
     }
 }
 
 void HealthBarView::onLeftClick(const sf::Vector2f position) {
+    // The commands report false when the model clamped the change away, which is
+    // exactly the "that did nothing" case worth shaking over.
     if (circleContains(m_increaseButton, position)) {
-        m_viewModel.increaseHp();
+        m_pressedButton = &m_increaseButton;
+        if (!m_viewModel.increaseHp()) {
+            m_shake.trigger();
+        }
     } else if (circleContains(m_decreaseButton, position)) {
-        m_viewModel.decreaseHp();
+        m_pressedButton = &m_decreaseButton;
+        if (!m_viewModel.decreaseHp()) {
+            m_shake.trigger();
+        }
     }
+}
+
+void HealthBarView::update(const float deltaSeconds) {
+    m_shake.update(deltaSeconds);
 }
 
 void HealthBarView::render(sf::RenderWindow& window) {
@@ -143,7 +162,17 @@ void HealthBarView::render(sf::RenderWindow& window) {
     m_hpText.setString(std::to_string(m_viewModel.currentHp()));
     centreText(m_hpText, {kHpTextCenterX, kHpTextCenterY});
 
+    m_increaseButton.setFillColor(m_pressedButton == &m_increaseButton ? kButtonPressedColor
+                                                                      : kButtonColor);
+    m_decreaseButton.setFillColor(m_pressedButton == &m_decreaseButton ? kButtonPressedColor
+                                                                      : kButtonColor);
+
     window.clear(sf::Color::Black);
+
+    sf::View shaken = window.getDefaultView();
+    shaken.move(m_shake.offset());
+    window.setView(shaken);
+
     window.draw(m_barTrack);
     window.draw(m_barFill);
     window.draw(m_hpText);
@@ -152,6 +181,10 @@ void HealthBarView::render(sf::RenderWindow& window) {
     window.draw(m_minusBar);
     window.draw(m_plusBarHorizontal);
     window.draw(m_plusBarVertical);
+
+    // Restore before the next event poll: mapPixelToCoords uses whatever view is
+    // currently set, so leaving the shaken one active would offset hit-testing.
+    window.setView(window.getDefaultView());
     window.display();
 }
 

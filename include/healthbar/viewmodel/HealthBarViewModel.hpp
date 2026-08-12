@@ -18,8 +18,10 @@ class HealthBarViewModel {
 public:
     explicit HealthBarViewModel(model::HealthModel& model);
 
-    void increaseHp();
-    void decreaseHp();
+    // Return whether the command changed anything; false means it was rejected
+    // at a limit, which the view uses to decide whether to shake.
+    bool increaseHp();
+    bool decreaseHp();
 
     float healthFraction() const;
     HealthLevel healthLevel() const;
