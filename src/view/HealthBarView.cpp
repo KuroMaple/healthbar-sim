@@ -1,5 +1,8 @@
 #include <healthbar/view/HealthBarView.hpp>
 
+#include <stdexcept>
+#include <string>
+
 namespace healthbar::view {
 
 namespace {
@@ -14,7 +17,31 @@ constexpr float kButtonCenterY = 380.f;
 constexpr float kDecreaseCenterX = 200.f;
 constexpr float kIncreaseCenterX = 400.f;
 
+constexpr float kGlyphLength = 26.f;
+constexpr float kGlyphThickness = 6.f;
+
+constexpr unsigned int kHpTextSize = 56;
+constexpr float kHpTextCenterX = 300.f;
+constexpr float kHpTextCenterY = 170.f;
+
 const sf::Color kButtonColor(50, 110, 220);
+const sf::Color kGlyphColor = sf::Color::White;
+
+sf::Font loadFont() {
+    sf::Font font;
+    const std::string path = std::string(HEALTHBAR_ASSET_DIR) + "/PixelifySans-Regular.ttf";
+    if (!font.openFromFile(path)) {
+        throw std::runtime_error("failed to open font: " + path);
+    }
+    return font;
+}
+
+// Re-centre after the string changes, since the bounds move with the glyphs.
+void centreText(sf::Text& text, const sf::Vector2f position) {
+    const sf::FloatRect bounds = text.getLocalBounds();
+    text.setOrigin(bounds.position + bounds.size / 2.f);
+    text.setPosition(position);
+}
 
 // The view owns the palette; the view model only says how healthy things are.
 sf::Color fillColorFor(const viewmodel::HealthLevel level) {
@@ -40,7 +67,11 @@ bool circleContains(const sf::CircleShape& circle, const sf::Vector2f point) {
 } // namespace
 
 HealthBarView::HealthBarView(viewmodel::HealthBarViewModel& viewModel)
-    : m_viewModel(viewModel) {
+    : m_viewModel(viewModel),
+      m_font(loadFont()),
+      m_hpText(m_font, "", kHpTextSize) {
+    m_hpText.setFillColor(sf::Color::White);
+
     // Anchor the bar on its left edge, so as HP drops the filled edge recedes
     // leftward and the empty space opens up on the right.
     m_barTrack.setSize({kBarWidth, kBarHeight});
@@ -66,6 +97,21 @@ HealthBarView::HealthBarView(viewmodel::HealthBarViewModel& viewModel)
     m_increaseButton.setOrigin({kButtonRadius, kButtonRadius});
     m_increaseButton.setPosition({kIncreaseCenterX, kButtonCenterY});
     m_increaseButton.setFillColor(kButtonColor);
+
+    m_minusBar.setSize({kGlyphLength, kGlyphThickness});
+    m_minusBar.setOrigin({kGlyphLength / 2.f, kGlyphThickness / 2.f});
+    m_minusBar.setPosition({kDecreaseCenterX, kButtonCenterY});
+    m_minusBar.setFillColor(kGlyphColor);
+
+    m_plusBarHorizontal.setSize({kGlyphLength, kGlyphThickness});
+    m_plusBarHorizontal.setOrigin({kGlyphLength / 2.f, kGlyphThickness / 2.f});
+    m_plusBarHorizontal.setPosition({kIncreaseCenterX, kButtonCenterY});
+    m_plusBarHorizontal.setFillColor(kGlyphColor);
+
+    m_plusBarVertical.setSize({kGlyphThickness, kGlyphLength});
+    m_plusBarVertical.setOrigin({kGlyphThickness / 2.f, kGlyphLength / 2.f});
+    m_plusBarVertical.setPosition({kIncreaseCenterX, kButtonCenterY});
+    m_plusBarVertical.setFillColor(kGlyphColor);
 }
 
 void HealthBarView::handleEvents(sf::RenderWindow& window) {
@@ -94,11 +140,18 @@ void HealthBarView::render(sf::RenderWindow& window) {
     m_barFill.setSize({kBarWidth * m_viewModel.healthFraction(), kBarHeight});
     m_barFill.setFillColor(fillColorFor(m_viewModel.healthLevel()));
 
+    m_hpText.setString(std::to_string(m_viewModel.currentHp()));
+    centreText(m_hpText, {kHpTextCenterX, kHpTextCenterY});
+
     window.clear(sf::Color::Black);
     window.draw(m_barTrack);
     window.draw(m_barFill);
+    window.draw(m_hpText);
     window.draw(m_decreaseButton);
     window.draw(m_increaseButton);
+    window.draw(m_minusBar);
+    window.draw(m_plusBarHorizontal);
+    window.draw(m_plusBarVertical);
     window.display();
 }
 

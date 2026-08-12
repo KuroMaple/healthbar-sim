@@ -21,6 +21,12 @@ add_executable(healthBarSim
         src/view/RoundedRectangle.cpp
 )
 target_include_directories(healthBarSim PRIVATE include)
+
+# Absolute path to assets/, baked in at configure time so the app finds its font
+# regardless of what working directory the IDE launches it from.
+target_compile_definitions(healthBarSim PRIVATE
+        HEALTHBAR_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets"
+)
 target_compile_features(healthBarSim PRIVATE cxx_std_23)
 target_link_libraries(healthBarSim PRIVATE SFML::Graphics)
 
