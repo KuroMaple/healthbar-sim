@@ -11,11 +11,18 @@ constexpr float kDurationSeconds = 0.35f;
 void HealthChangeHighlight::trigger(const float fromFraction, const float toFraction) {
     const Kind incoming = toFraction < fromFraction ? Kind::Damage : Kind::Heal;
 
-    // Same direction while still running: hold the outer edge where it was so the
-    // whole burst collapses as one span. Otherwise start fresh.
-    if (!isActive() || kind() != incoming) {
-        m_fromFraction = fromFraction;
-    }
+    // Same direction while still running: pick up from where the edge actually is
+    // rather than where the span began, so the travel already done isn't thrown
+    // away. Resetting the timer sends progress back to 0, and progress 0 means
+    // "at m_fromFraction" — so m_fromFraction has to move to match or the edge
+    // snaps back outward on every click.
+    //
+    // Read the old state before overwriting any of it: both helpers below depend
+    // on all three members.
+    const bool continuing = isActive() && kind() == incoming;
+    const float newFrom = continuing ? movingEdgeFraction() : fromFraction;
+
+    m_fromFraction = newFrom;
     m_toFraction = toFraction;
     m_remainingSeconds = kDurationSeconds;
 }

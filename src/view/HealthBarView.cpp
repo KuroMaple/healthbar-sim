@@ -179,9 +179,18 @@ void HealthBarView::update(const float deltaSeconds) {
 }
 
 void HealthBarView::render(sf::RenderWindow& window) {
-    // Both are derived state: recomputed from current HP every frame, so no
-    // mutation path can leave them stale.
-    m_barFill.setSize({kBarWidth * m_viewModel.healthFraction(), kBarHeight});
+    // Both are derived state: recomputed every frame, so no mutation path can
+    // leave them stale.
+    //
+    // The fill stops at whichever edge is further left. On damage that's the new
+    // health, so the bar snaps down immediately; on heal it's the highlight's
+    // moving edge, so the bar grows into the blue instead of covering it. Colour
+    // still tracks the true level, so a heal recolours at once.
+    const float healthFraction = m_viewModel.healthFraction();
+    const float fillFraction = m_highlight.isActive()
+                                       ? std::min(healthFraction, m_highlight.movingEdgeFraction())
+                                       : healthFraction;
+    m_barFill.setSize({kBarWidth * fillFraction, kBarHeight});
     m_barFill.setFillColor(fillColorFor(m_viewModel.healthLevel()));
 
     if (m_highlight.isActive()) {
@@ -224,17 +233,13 @@ void HealthBarView::render(sf::RenderWindow& window) {
 
     window.draw(m_barTrack);
 
-    // Draw order carries the effect: damage goes under the fill so its extended
-    // left edge is covered by green, heal goes over it so the gained segment
-    // shows on top and wipes away to reveal green.
-    const bool isDamage = m_highlight.kind() == HealthChangeHighlight::Kind::Damage;
-    if (m_highlight.isActive() && isDamage) {
+    // The highlight always sits under the fill. Because the fill lags behind a
+    // heal, both directions look the same from here: the green edge is at the
+    // highlight's inner edge, and the tucked-under part is hidden by green.
+    if (m_highlight.isActive()) {
         window.draw(m_highlightBar);
     }
     window.draw(m_barFill);
-    if (m_highlight.isActive() && !isDamage) {
-        window.draw(m_highlightBar);
-    }
 
     window.draw(m_hpText);
     window.draw(m_decreaseButton);
