@@ -1,6 +1,6 @@
 # Health Bar Simulator
 
-<img src="https://img.shields.io/badge/-C++-00599C?style=flat&logo=cplusplus&logoColor=white" alt="C++"/><img src="https://img.shields.io/badge/-SFML-8CC445?style=flat&logo=sfml&logoColor=white" alt="SFML"/>
+<img src="https://img.shields.io/badge/-C++-00599C?style=flat&logo=cplusplus&logoColor=white" alt="C++"/><img src="https://img.shields.io/badge/-SFML-8CC445?style=flat&logo=sfml&logoColor=white" alt="SFML"/><img src="https://img.shields.io/badge/-Claude-D97757?style=flat&logo=claude&logoColor=white" alt="Claude"/>
 
 An interactive **health bar** built in **C++** with **SFML 3**, structured around **MVVM** to keep game rules, presentation logic, and rendering in separate layers. Damage and healing are communicated entirely through motion — an interpolated highlight over the changed segment, threshold-driven colour, and a camera shake when a click can't be applied.
 
