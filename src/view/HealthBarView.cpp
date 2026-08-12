@@ -8,10 +8,34 @@ constexpr float kBarHeight = 40.f;
 constexpr float kBarLeft = 100.f;
 constexpr float kBarCenterY = 250.f;
 
-constexpr float kButtonSize = 60.f;
+constexpr float kButtonRadius = 30.f;
 constexpr float kButtonCenterY = 380.f;
 constexpr float kDecreaseCenterX = 200.f;
 constexpr float kIncreaseCenterX = 400.f;
+
+const sf::Color kButtonColor(50, 110, 220);
+
+// The view owns the palette; the view model only says how healthy things are.
+sf::Color fillColorFor(const viewmodel::HealthLevel level) {
+    switch (level) {
+        case viewmodel::HealthLevel::Healthy:
+            return sf::Color(60, 190, 70);
+        case viewmodel::HealthLevel::Low:
+            return sf::Color(225, 195, 50);
+        case viewmodel::HealthLevel::Critical:
+            return sf::Color(200, 40, 40);
+    }
+    return sf::Color::White;
+}
+
+// getGlobalBounds() on a circle is its bounding square, which would swallow
+// clicks in the corners. Compare squared distance to the radius instead — same
+// answer, no square root.
+bool circleContains(const sf::CircleShape& circle, const sf::Vector2f point) {
+    const sf::Vector2f offset = point - circle.getPosition();
+    const float radius = circle.getRadius();
+    return offset.x * offset.x + offset.y * offset.y <= radius * radius;
+}
 } // namespace
 
 HealthBarView::HealthBarView(viewmodel::HealthBarViewModel& viewModel)
@@ -26,17 +50,19 @@ HealthBarView::HealthBarView(viewmodel::HealthBarViewModel& viewModel)
     m_barFill.setSize({kBarWidth, kBarHeight});
     m_barFill.setOrigin({0.f, kBarHeight / 2.f});
     m_barFill.setPosition({kBarLeft, kBarCenterY});
-    m_barFill.setFillColor(sf::Color(200, 40, 40));
+    m_barFill.setFillColor(fillColorFor(m_viewModel.healthLevel()));
 
-    m_decreaseButton.setSize({kButtonSize, kButtonSize});
-    m_decreaseButton.setOrigin({kButtonSize / 2.f, kButtonSize / 2.f});
+    // Origin at the circle's centre, so setPosition places the centre directly
+    // and the hit test can measure distance from that same point.
+    m_decreaseButton.setRadius(kButtonRadius);
+    m_decreaseButton.setOrigin({kButtonRadius, kButtonRadius});
     m_decreaseButton.setPosition({kDecreaseCenterX, kButtonCenterY});
-    m_decreaseButton.setFillColor(sf::Color(120, 30, 30));
+    m_decreaseButton.setFillColor(kButtonColor);
 
-    m_increaseButton.setSize({kButtonSize, kButtonSize});
-    m_increaseButton.setOrigin({kButtonSize / 2.f, kButtonSize / 2.f});
+    m_increaseButton.setRadius(kButtonRadius);
+    m_increaseButton.setOrigin({kButtonRadius, kButtonRadius});
     m_increaseButton.setPosition({kIncreaseCenterX, kButtonCenterY});
-    m_increaseButton.setFillColor(sf::Color(30, 120, 30));
+    m_increaseButton.setFillColor(kButtonColor);
 }
 
 void HealthBarView::handleEvents(sf::RenderWindow& window) {
@@ -52,15 +78,18 @@ void HealthBarView::handleEvents(sf::RenderWindow& window) {
 }
 
 void HealthBarView::onLeftClick(const sf::Vector2f position) {
-    if (m_increaseButton.getGlobalBounds().contains(position)) {
+    if (circleContains(m_increaseButton, position)) {
         m_viewModel.increaseHp();
-    } else if (m_decreaseButton.getGlobalBounds().contains(position)) {
+    } else if (circleContains(m_decreaseButton, position)) {
         m_viewModel.decreaseHp();
     }
 }
 
 void HealthBarView::render(sf::RenderWindow& window) {
+    // Both are derived state: recomputed from current HP every frame, so no
+    // mutation path can leave them stale.
     m_barFill.setSize({kBarWidth * m_viewModel.healthFraction(), kBarHeight});
+    m_barFill.setFillColor(fillColorFor(m_viewModel.healthLevel()));
 
     window.clear(sf::Color::Black);
     window.draw(m_barTrack);

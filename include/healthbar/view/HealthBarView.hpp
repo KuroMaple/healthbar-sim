@@ -22,8 +22,8 @@ private:
 
     sf::RectangleShape m_barTrack;
     sf::RectangleShape m_barFill;
-    sf::RectangleShape m_increaseButton;
-    sf::RectangleShape m_decreaseButton;
+    sf::CircleShape m_increaseButton;
+    sf::CircleShape m_decreaseButton;
 };
 
 } // namespace healthbar::view
