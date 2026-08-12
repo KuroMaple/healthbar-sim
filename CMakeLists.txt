@@ -18,6 +18,7 @@ add_executable(healthBarSim
         src/model/HealthModel.cpp
         src/viewmodel/HealthBarViewModel.cpp
         src/view/HealthBarView.cpp
+        src/view/RoundedRectangle.cpp
 )
 target_include_directories(healthBarSim PRIVATE include)
 target_compile_features(healthBarSim PRIVATE cxx_std_23)

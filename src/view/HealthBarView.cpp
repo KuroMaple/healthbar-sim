@@ -7,6 +7,7 @@ constexpr float kBarWidth = 400.f;
 constexpr float kBarHeight = 40.f;
 constexpr float kBarLeft = 100.f;
 constexpr float kBarCenterY = 250.f;
+constexpr float kBarCornerRadius = 12.f;
 
 constexpr float kButtonRadius = 30.f;
 constexpr float kButtonCenterY = 380.f;
@@ -43,11 +44,13 @@ HealthBarView::HealthBarView(viewmodel::HealthBarViewModel& viewModel)
     // Anchor the bar on its left edge, so as HP drops the filled edge recedes
     // leftward and the empty space opens up on the right.
     m_barTrack.setSize({kBarWidth, kBarHeight});
+    m_barTrack.setRadius(kBarCornerRadius);
     m_barTrack.setOrigin({0.f, kBarHeight / 2.f});
     m_barTrack.setPosition({kBarLeft, kBarCenterY});
     m_barTrack.setFillColor(sf::Color(60, 60, 60));
 
     m_barFill.setSize({kBarWidth, kBarHeight});
+    m_barFill.setRadius(kBarCornerRadius);
     m_barFill.setOrigin({0.f, kBarHeight / 2.f});
     m_barFill.setPosition({kBarLeft, kBarCenterY});
     m_barFill.setFillColor(fillColorFor(m_viewModel.healthLevel()));

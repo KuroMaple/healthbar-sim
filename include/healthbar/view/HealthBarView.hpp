@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <healthbar/view/RoundedRectangle.hpp>
 #include <healthbar/viewmodel/HealthBarViewModel.hpp>
 
 namespace healthbar::view {
@@ -20,8 +21,8 @@ private:
 
     viewmodel::HealthBarViewModel& m_viewModel;
 
-    sf::RectangleShape m_barTrack;
-    sf::RectangleShape m_barFill;
+    RoundedRectangle m_barTrack;
+    RoundedRectangle m_barFill;
     sf::CircleShape m_increaseButton;
     sf::CircleShape m_decreaseButton;
 };
