@@ -193,9 +193,16 @@ void HealthBarView::render(sf::RenderWindow& window) {
         // Clamped so a tuck near empty can't push the highlight out past the
         // track's rounded left cap. Width derives from the tucked edge, so the
         // right edge stays put when the clamp engages.
-        const float tuckedLeftX = std::max(kBarLeft, leftX - kHighlightTuck);
+        float tuckedLeftX = std::max(kBarLeft, leftX - kHighlightTuck);
+
+        // At zero HP the clamp above cancels the tuck, and nothing else stops the
+        // width collapsing to nothing. Below two radii the corner radius clamps to
+        // width/2, the shape squares off, and its corners escape the track's
+        // rounded cap. Hold the width there and let the timer end the effect.
+        const float width = std::max(rightX - tuckedLeftX, kHighlightTuck);
+
         m_highlightBar.setPosition({tuckedLeftX, kBarCenterY});
-        m_highlightBar.setSize({rightX - tuckedLeftX, kBarHeight});
+        m_highlightBar.setSize({width, kBarHeight});
         m_highlightBar.setFillColor(
                 m_highlight.kind() == HealthChangeHighlight::Kind::Damage ? kDamageColor
                                                                          : kHealColor);
