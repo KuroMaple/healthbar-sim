@@ -18,6 +18,7 @@ add_executable(healthBarSim
         src/model/HealthModel.cpp
         src/viewmodel/HealthBarViewModel.cpp
         src/view/HealthBarView.cpp
+        src/view/HealthChangeHighlight.cpp
         src/view/RoundedRectangle.cpp
         src/view/ShakeEffect.cpp
 )

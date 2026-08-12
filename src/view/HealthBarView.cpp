@@ -1,5 +1,6 @@
 #include <healthbar/view/HealthBarView.hpp>
 
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 
@@ -11,6 +12,12 @@ constexpr float kBarHeight = 40.f;
 constexpr float kBarLeft = 100.f;
 constexpr float kBarCenterY = 250.f;
 constexpr float kBarCornerRadius = 12.f;
+
+// How far left the highlight slides under the fill to hide its own rounded
+// corner. Two radii, not one: the fill's cap and the highlight's corner curve
+// away from each other, so at one radius neither covers the join and the dark
+// track shows through as a crescent above and below.
+constexpr float kHighlightTuck = 2.f * kBarCornerRadius;
 
 constexpr float kButtonRadius = 30.f;
 constexpr float kButtonCenterY = 380.f;
@@ -27,6 +34,10 @@ constexpr float kHpTextCenterY = 170.f;
 const sf::Color kButtonColor(50, 110, 220);
 const sf::Color kButtonPressedColor(30, 70, 150);
 const sf::Color kGlyphColor = sf::Color::White;
+// Lighter than the Critical fill colour, so the two stay distinct when a hit
+// lands while the bar is already red.
+const sf::Color kDamageColor(255, 75, 70);
+const sf::Color kHealColor(70, 160, 235);
 
 sf::Font loadFont() {
     sf::Font font;
@@ -87,6 +98,11 @@ HealthBarView::HealthBarView(viewmodel::HealthBarViewModel& viewModel)
     m_barFill.setPosition({kBarLeft, kBarCenterY});
     m_barFill.setFillColor(fillColorFor(m_viewModel.healthLevel()));
 
+    // Same anchoring as the fill; its size and position are set per frame from
+    // the active highlight.
+    m_highlightBar.setRadius(kBarCornerRadius);
+    m_highlightBar.setOrigin({0.f, kBarHeight / 2.f});
+
     // Origin at the circle's centre, so setPosition places the centre directly
     // and the hit test can measure distance from that same point.
     m_decreaseButton.setRadius(kButtonRadius);
@@ -136,14 +152,22 @@ void HealthBarView::handleEvents(sf::RenderWindow& window) {
 void HealthBarView::onLeftClick(const sf::Vector2f position) {
     // The commands report false when the model clamped the change away, which is
     // exactly the "that did nothing" case worth shaking over.
+    // Capture the fraction first: the commands report only whether something
+    // changed, not what it changed from.
     if (circleContains(m_increaseButton, position)) {
         m_pressedButton = &m_increaseButton;
-        if (!m_viewModel.increaseHp()) {
+        const float before = m_viewModel.healthFraction();
+        if (m_viewModel.increaseHp()) {
+            m_highlight.trigger(before, m_viewModel.healthFraction());
+        } else {
             m_shake.trigger();
         }
     } else if (circleContains(m_decreaseButton, position)) {
         m_pressedButton = &m_decreaseButton;
-        if (!m_viewModel.decreaseHp()) {
+        const float before = m_viewModel.healthFraction();
+        if (m_viewModel.decreaseHp()) {
+            m_highlight.trigger(before, m_viewModel.healthFraction());
+        } else {
             m_shake.trigger();
         }
     }
@@ -151,6 +175,7 @@ void HealthBarView::onLeftClick(const sf::Vector2f position) {
 
 void HealthBarView::update(const float deltaSeconds) {
     m_shake.update(deltaSeconds);
+    m_highlight.update(deltaSeconds);
 }
 
 void HealthBarView::render(sf::RenderWindow& window) {
@@ -158,6 +183,23 @@ void HealthBarView::render(sf::RenderWindow& window) {
     // mutation path can leave them stale.
     m_barFill.setSize({kBarWidth * m_viewModel.healthFraction(), kBarHeight});
     m_barFill.setFillColor(fillColorFor(m_viewModel.healthLevel()));
+
+    if (m_highlight.isActive()) {
+        const float anchor = m_highlight.anchorFraction();
+        const float moving = m_highlight.movingEdgeFraction();
+        const float leftX = kBarLeft + kBarWidth * std::min(anchor, moving);
+        const float rightX = kBarLeft + kBarWidth * std::max(anchor, moving);
+
+        // Clamped so a tuck near empty can't push the highlight out past the
+        // track's rounded left cap. Width derives from the tucked edge, so the
+        // right edge stays put when the clamp engages.
+        const float tuckedLeftX = std::max(kBarLeft, leftX - kHighlightTuck);
+        m_highlightBar.setPosition({tuckedLeftX, kBarCenterY});
+        m_highlightBar.setSize({rightX - tuckedLeftX, kBarHeight});
+        m_highlightBar.setFillColor(
+                m_highlight.kind() == HealthChangeHighlight::Kind::Damage ? kDamageColor
+                                                                         : kHealColor);
+    }
 
     m_hpText.setString(std::to_string(m_viewModel.currentHp()));
     centreText(m_hpText, {kHpTextCenterX, kHpTextCenterY});
@@ -174,7 +216,19 @@ void HealthBarView::render(sf::RenderWindow& window) {
     window.setView(shaken);
 
     window.draw(m_barTrack);
+
+    // Draw order carries the effect: damage goes under the fill so its extended
+    // left edge is covered by green, heal goes over it so the gained segment
+    // shows on top and wipes away to reveal green.
+    const bool isDamage = m_highlight.kind() == HealthChangeHighlight::Kind::Damage;
+    if (m_highlight.isActive() && isDamage) {
+        window.draw(m_highlightBar);
+    }
     window.draw(m_barFill);
+    if (m_highlight.isActive() && !isDamage) {
+        window.draw(m_highlightBar);
+    }
+
     window.draw(m_hpText);
     window.draw(m_decreaseButton);
     window.draw(m_increaseButton);

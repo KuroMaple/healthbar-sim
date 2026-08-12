@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <healthbar/view/HealthChangeHighlight.hpp>
 #include <healthbar/view/RoundedRectangle.hpp>
 #include <healthbar/view/ShakeEffect.hpp>
 #include <healthbar/viewmodel/HealthBarViewModel.hpp>
@@ -34,6 +35,7 @@ private:
 
     RoundedRectangle m_barTrack;
     RoundedRectangle m_barFill;
+    RoundedRectangle m_highlightBar;
     sf::CircleShape m_increaseButton;
     sf::CircleShape m_decreaseButton;
 
@@ -43,6 +45,7 @@ private:
     sf::RectangleShape m_plusBarVertical;
 
     ShakeEffect m_shake;
+    HealthChangeHighlight m_highlight;
 
     // Which button is currently held down, or null. Points at one of the button
     // members above, so it never outlives what it refers to.
